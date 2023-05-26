@@ -1,7 +1,7 @@
 # L A U E S I M
 Simulate diffraction from crystals using divergent chromatic X-rays and flat detectors.
 
-This is a toy sientific project to gain a better understanding of the so called Laue Diffraction geometry in which a divergent and white beam of X-rays is allowed to illuminate a polycrytsal giving rise to diffraction that is recorded on a flat 2d area detector.
+**NOTE:** *This is a toy sientific project to gain a better understanding of the so called Laue Diffraction geometry in which a divergent and white beam of X-rays is allowed to illuminate a polycrytsal giving rise to diffraction that is recorded on a flat 2d area detector. Use it to learn about diffraction and have fun!*
 
 # Example
 ----------
