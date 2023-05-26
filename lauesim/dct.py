@@ -37,6 +37,11 @@ class model(object):
         image = self.geometry.render()
         draw( image, self.geometry, self.sample )
 
+    def show_frame(self):
+        image = self.geometry.render()
+        plt.imshow( image, cmap='gray_r' )  
+        plt.axis('off')
+        plt.show()
 
 if __name__ == "__main__":
     dct = model()
