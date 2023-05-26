@@ -45,5 +45,6 @@ class model(object):
 
 if __name__ == "__main__":
     dct = model()
+    dct.sample.rotation_angle = np.pi/2.
     dct.collect()
-    dct.show()
+    dct.show_frame()
