@@ -5,7 +5,23 @@ This is a toy sientific project to gain a better understanding of the so called 
 
 # Example
 ----------
-TODO
+
+```python
+    from lauesim import dct
+    my_dct_model = dct.model()
+    my_dct_model.collect()
+    my_dct_model.show()
+```
+![laue](https://github.com/AxelHenningsson/lauesim/assets/31615210/848a4672-6aac-43f4-90be-758e278ff301)
+The default model features a single 0.5mm diameter single crystal of aplha quartz. The model parameters can be tweaked trhough attributes of the components. FOr instance to rotate the sample do:
+```python
+    my_dct_model.sample.rotation_angle = np.pi/2.
+    my_dct_model.collect()
+    my_dct_model.show_frame()
+```
+This then gives a different diffraction pattern
+![image](https://github.com/AxelHenningsson/lauesim/assets/31615210/544d8cf3-15cd-4d3b-bc9b-c01ea1522436)
+
 
 # Installation
 ----------
