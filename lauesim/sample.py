@@ -1,32 +1,81 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from xfab import tools
+from xfab import tools, structure
 from scipy.spatial.transform import Rotation
+from CifFile import ReadCif
 
 class crystal(object):
 
-    def __init__(self, points, orientation, unit_cell, sgname):
+    def __init__(self, points, orientation, unit_cell, sgname, cif=None, hkls=None):
         self.points = points
-        self.orientation = orientation
         self.unit_cell = unit_cell
         self.sgname = sgname
         self._rotation_angle = 0
-        self.B  = tools.form_b_mat(unit_cell)
+        self.orientation = orientation
+        self._cif   = cif
+        self._hkls  = hkls
+        self.F2     = self._get_structure_factors()
+
+    @property
+    def orientation(self):
+        return self._orientation
+
+    @orientation.setter
+    def orientation(self, orientation):
+        if len( orientation.shape ) == 2:
+            self._orientation = np.array([orientation.copy() for _ in range(self.points.shape[0])])
+        else:
+            self._orientation = orientation
+        assert self._orientation.shape==(self.points.shape[0], 3, 3)
+        B  = tools.form_b_mat(self.unit_cell)
+        self._orientationB = np.array([U.dot(B) for U in self._orientation])
+
+    def _get_structure_factors(self):
+        if self.cif is None:
+            return np.ones((self._hkls.shape[0],))
+        else:
+            atom_factory = structure.build_atomlist()
+            cif_dict = ReadCif(self._cif)
+            cifblk =  cif_dict[list(cif_dict.keys())[0]]
+            atom_factory.CIFread(
+                ciffile=None,
+                cifblkname=None,
+                cifblk=cifblk)
+            atoms = atom_factory.atomlist.atom
+            structure_factors = np.zeros((self._hkls.shape[0], 2))
+            for i, hkl in enumerate(self._hkls):
+                structure_factors[i, :] = structure.StructureFactor(
+                    hkl, self.unit_cell, self.sgname, atoms, disper=None)
+            return np.sum(structure_factors**2, axis=1)
+
+    @property
+    def cif(self):
+        return self._cif
+
+    @cif.setter
+    def cif(self, cif):
+        self._cif = cif
+        self.F2 = self._get_structure_factors()
+
+    @property
+    def hkls(self):
+        return self._hkls
+
+    @hkls.setter
+    def hkls(self, hkls):
+        self.F2 = self._get_structure_factors()
+        self._hkls = hkls
 
     def diffract(self, dct_setup, xrays):
-        sintlmin = np.sin(np.radians(0.01))/np.mean(xrays.wavelength)
-        sintlmax = np.sin(np.radians(5))/np.mean(xrays.wavelength)
-        self.hkls = tools.genhkl_all(self.unit_cell, sintlmin, sintlmax, sgname=self.sgname)
-        Gs = self.orientation.dot(self.B.dot(self.hkls.T)).T
         k = self.points - dct_setup.source
-
-        for G in Gs:
-            d = 2*np.pi / np.linalg.norm(G)
-            ghat = G/np.linalg.norm(G)
-            khat = k/np.linalg.norm(k,axis=1).reshape(k.shape[0],1)
-            theta = np.arccos( khat.dot(ghat) ) - (np.pi/2)
+        for f2,hkl in zip(self.F2, self.hkls):
+            G  = self._orientationB.dot(hkl)
+            d = 2*np.pi / np.linalg.norm(G, axis=1)
+            ghat = G/np.linalg.norm(G,axis=1).reshape(G.shape[0], 1)
+            khat = k/np.linalg.norm(k,axis=1).reshape(k.shape[0], 1)
+            theta = np.arccos( np.sum( khat*ghat, axis=1) ) - (np.pi/2)
             wavelength = np.sin( theta ) * 2 * d
-            intensity = xrays(wavelength)
+            intensity = xrays(wavelength)*f2
             if np.sum(intensity)==0: continue
             kscatter = 2*np.pi * khat / wavelength.reshape(khat.shape[0],1)
             kprime = G + kscatter
@@ -41,7 +90,7 @@ class crystal(object):
         s, c = np.sin(angle), np.cos(angle)
         R = np.array([[c,-s,0],[s,c,0],[0,0,1]])
         self.points = R.dot( self.points.T ).T
-        self.orientation = R.dot(self.orientation)
+        self._orientation = R.dot(self._orientation)
         self._rotation_angle = angle
 
 if __name__ == "__main__":
