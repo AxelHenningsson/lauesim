@@ -20,19 +20,19 @@ class model(object):
         self.geometry = dctSetup(source, detector_shape, pixelsize, beamstop_shape)
 
         wavelength = np.linspace(0.1127134*0.65, 0.1127134*1.35, 100)
-        std = wavelength[6]-wavelength[0]
+        std = (wavelength[6]-wavelength[0])
         intensity =  np.exp( -0.5*(np.mean(wavelength)-wavelength)**2/std**2 )
         self.xray = xrays(intensity, wavelength)
 
         unit_cell = [4.926, 4.926, 5.4189, 90., 90., 120.]
         sgname = 'P3221'
         orientation = Rotation.random().as_matrix()
-        points = (np.random.rand(1024,3)-0.5)*1000
+        points = (np.random.rand(512,3)-0.5)*1000
         points = points[np.linalg.norm(points, axis=1) < 500,:]
 
         cif = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','tutorial','quartz.cif'))
-        sintlmin = np.sin(np.radians(3))/np.mean(wavelength)
-        sintlmax = np.sin(np.radians(7))/np.mean(wavelength)
+        sintlmin = np.sin(np.radians(4))/np.mean(wavelength)
+        sintlmax = np.sin(np.radians(6))/np.mean(wavelength)
         hkls = tools.genhkl_all(unit_cell, sintlmin, sintlmax, sgname=sgname)
         self.sample = crystal(points, orientation, unit_cell, sgname, cif, hkls)
 

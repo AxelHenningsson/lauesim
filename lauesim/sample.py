@@ -28,7 +28,7 @@ class crystal(object):
             self._orientation = orientation
         assert self._orientation.shape==(self.points.shape[0], 3, 3)
         B  = tools.form_b_mat(self.unit_cell)
-        self._orientationB = np.array([U.dot(B) for U in self._orientation])
+        self.UB = np.array([U.dot(B) for U in self._orientation])
 
     def _get_structure_factors(self):
         if self.cif is None:
@@ -69,7 +69,7 @@ class crystal(object):
     def diffract(self, dct_setup, xrays):
         k = self.points - dct_setup.source
         for f2,hkl in zip(self.F2, self.hkls):
-            G  = self._orientationB.dot(hkl)
+            G  = self.UB.dot(hkl)
             d = 2*np.pi / np.linalg.norm(G, axis=1)
             ghat = G/np.linalg.norm(G,axis=1).reshape(G.shape[0], 1)
             khat = k/np.linalg.norm(k,axis=1).reshape(k.shape[0], 1)
@@ -87,11 +87,15 @@ class crystal(object):
 
     @rotation_angle.setter
     def rotation_angle(self, angle):
-        s, c = np.sin(angle), np.cos(angle)
+        ang = angle - self._rotation_angle
+        s, c = np.sin(ang), np.cos(ang)
         R = np.array([[c,-s,0],[s,c,0],[0,0,1]])
         self.points = R.dot( self.points.T ).T
-        self._orientation = R.dot(self._orientation)
-        self._rotation_angle = angle
+        U = self._orientation.copy()
+        for i in range(self._orientation.shape[0]):
+            U[i,:,:] = R.dot(U[i,:,:])
+        self.orientation = U
+        self._rotation_angle = ang
 
 if __name__ == "__main__":
     np.random.seed(1)
