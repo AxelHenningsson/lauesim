@@ -31,8 +31,8 @@ class model(object):
         points = points[np.linalg.norm(points, axis=1) < 500,:]
 
         cif = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','tutorial','quartz.cif'))
-        sintlmin = np.sin(np.radians(4))/np.mean(wavelength)
-        sintlmax = np.sin(np.radians(6))/np.mean(wavelength)
+        sintlmin = np.sin(np.radians(1))/np.mean(wavelength)
+        sintlmax = np.sin(np.radians(10))/np.mean(wavelength)
         hkls = tools.genhkl_all(unit_cell, sintlmin, sintlmax, sgname=sgname)
         self.sample = crystal(points, orientation, unit_cell, sgname, cif, hkls)
 

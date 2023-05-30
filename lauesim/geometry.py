@@ -6,15 +6,24 @@ class dctSetup(object):
 
     def __init__(self, source, detector_shape, pixelsize, beamstop_shape):
         self.source = source
-        self.working_distance = np.abs(source[0])
         self.detector_shape = detector_shape
         self.pixelsize = pixelsize
         self.beamstop_shape = beamstop_shape
         self.frame = np.zeros(detector_shape)
-        self.d0   = np.array( [ self.working_distance, -detector_shape[0]*pixelsize/2., -detector_shape[1]*pixelsize/2.] )
+        self.d0   = np.array( [ np.abs(self.source[0]), -detector_shape[0]*pixelsize/2., -detector_shape[1]*pixelsize/2.] )
+
+    @property
+    def working_distance(self):
+        return self.d0[0]
+
+    @working_distance.setter
+    def working_distance(self, working_distance):
+        assert working_distance>0
+        self.source[0] = -working_distance
+        self.d0[0] = working_distance
 
     def add_rays(self, sources, directions, intensity):
-        s   = ( self.working_distance - sources[:,0] )/directions[:,0]
+        s   = ( self.d0[0] - sources[:,0] ) / directions[:,0]
         p3d = sources + s.reshape(len(s),1)*directions
         p2d = p3d - self.d0
         det_y = np.round(p2d[:,1]/self.pixelsize).astype(int)
@@ -26,13 +35,13 @@ class dctSetup(object):
 
     def render(self):
         self.frame = gaussian_filter(self.frame, sigma=5)
-        self.frame += np.abs( np.random.normal(0, np.max(self.frame)/7., size=self.frame.shape) )
+        self.frame += np.abs( np.random.normal(0, np.max(self.frame)/10., size=self.frame.shape) )
         a = self.detector_shape[0]//2 - self.beamstop_shape[0]//2
         b = self.detector_shape[0]//2 + self.beamstop_shape[0]//2
         c = self.detector_shape[1]//2 - self.beamstop_shape[1]//2
         d = self.detector_shape[1]//2 + self.beamstop_shape[1]//2
         self.frame[a:b,c:d] = 0
-        return self.frame
+        return np.round( 64000 * self.frame / np.max(self.frame) ).astype(np.int32)
 
 if __name__ == "__main__":
     N = 512

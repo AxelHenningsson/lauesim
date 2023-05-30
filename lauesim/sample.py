@@ -68,11 +68,13 @@ class crystal(object):
 
     def diffract(self, dct_setup, xrays):
         k = self.points - dct_setup.source
-        for f2,hkl in zip(self.F2, self.hkls):
+        khat = k/np.linalg.norm(k,axis=1).reshape(k.shape[0], 1)
+        intmask = self.F2 > 0.1*np.max(self.F2)
+        for f2, hkl in zip(self.F2[intmask], self.hkls[intmask]):
             G  = self.UB.dot(hkl)
-            d = 2*np.pi / np.linalg.norm(G, axis=1)
-            ghat = G/np.linalg.norm(G,axis=1).reshape(G.shape[0], 1)
-            khat = k/np.linalg.norm(k,axis=1).reshape(k.shape[0], 1)
+            Gnorm = np.linalg.norm(G, axis=1)
+            d = 2*np.pi / Gnorm
+            ghat = G / Gnorm.reshape(G.shape[0], 1)
             theta = np.arccos( np.sum( khat*ghat, axis=1) ) - (np.pi/2)
             wavelength = np.sin( theta ) * 2 * d
             intensity = xrays(wavelength)*f2
